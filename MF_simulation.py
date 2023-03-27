@@ -198,7 +198,7 @@ def double_gaussian(t, t0, T1, T2, amplitude):
 
 
 
-# loading cell parameters and connections and define the transfer funcitons of both pops with them
+# loading cell parameters and connections and define the transfer functions of both pops with them
 def load_transfer_functions(NRN1, NRN2, NTWK):
 
     
@@ -211,6 +211,7 @@ def load_transfer_functions(NRN1, NRN2, NTWK):
     try:
         
         
+        # load the fitted parameters of the TF for pop 1
         P1 = np.load('data/RS-cell_CONFIG1_fit.npy')
         
         
@@ -233,6 +234,7 @@ def load_transfer_functions(NRN1, NRN2, NTWK):
     reformat_syn_parameters(params2, M)
     try:
         
+        # load fit params for pop2
         P2 = np.load('data/FS-cell_CONFIG1_fit.npy')
         
         
@@ -294,17 +296,8 @@ def diff2_fi_fi(TF, fe, fi,XX, df=df):
 
 
 
-
+#-MAIN---
 def run_mean_field_2order_secondway(NRN1, NRN2, NTWK,T=5e-3, dt=1e-4, tstop=2):
-
-
-
-    # gauss parameters for the input
-    amp = 5
-    t0 = 1.
-    T1=0.01
-    T2=0.2
-    
     
     T=T
     dt=dt
@@ -342,29 +335,21 @@ def run_mean_field_2order_secondway(NRN1, NRN2, NTWK,T=5e-3, dt=1e-4, tstop=2):
     TF1, TF2 = load_transfer_functions(NRN1, NRN2, NTWK)
     
     t = np.arange(int(tstop/dt))*dt
-    fe=0*t
-    fi=0*t
-    ww=0*t
-    v2vec=0*t
-    v3vec=0*t
-    v4vec=0*t
-    
+
+    #external input (here: gauss)
+    amp = 10
+    t0 = 1.
+    T1=0.01
+    T2=0.2
+
     extinpnuovo=double_gaussian(t, t0, T1, T2, amp)
     
 
 
-
-
-    def dX_dt_scalar(X, t=0):
-        exc_aff = extinp*t/t
-        pure_exc_aff = extinpnuovo
-        return build_up_differential_operator(TF1, TF2,NRN1, NRN2, NTWK,  Ne=Ne, Ni=Ni, T=T)(X,\
-                                                                                             exc_aff=exc_aff, pure_exc_aff=pure_exc_aff,inh_fract=inh_fract)
-    
     
     ###initial conditions###
     X0 = [1., 30, .5, .5, .5,1.e-10,0.]
-    #    [fe, fi, cee, cei, cii, we ,wi]
+    #    [fe, fi, cee,cei,cii,we,   wi]
     X = np.zeros((len(t), len(X0)))
     for i in range(0,6):
         X[0][i]=X0[i]
@@ -424,11 +409,12 @@ def run_mean_field_2order_secondway(NRN1, NRN2, NTWK,T=5e-3, dt=1e-4, tstop=2):
     #PLOTTING
     plt.plot(t,fe,'b')
     plt.plot(t,fi,'r')
+    plt.plot(t,extinpnuovo,color='black')
     plt.fill_between(t, fe-sfe, fe+sfe, color='b', alpha=0.2)
     plt.fill_between(t, fi-sfi, fi+sfi, color='r', alpha=0.2)
     plt.show()
 
-    #-uncomment to ave variables:
+    #-uncomment to save variables:
     # np.save(filesave,[t,fe, fi, sfe, sfei, sfi, XXe, XXi])
 
 
@@ -438,4 +424,4 @@ def run_mean_field_2order_secondway(NRN1, NRN2, NTWK,T=5e-3, dt=1e-4, tstop=2):
 if __name__=='__main__':
     # change cell types and network here (look into cell_library.py and syn_and_connec_library.py for options or to change them)
     run_mean_field_2order_secondway('RS-cellbis', 'FS-cell', 'CONFIG1',T=30e-3, dt=5e-4, tstop=2)
-    # you could change here to 1order if you want
+
